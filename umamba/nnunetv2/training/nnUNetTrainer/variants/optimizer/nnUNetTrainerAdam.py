@@ -27,6 +27,21 @@ class nnUNetTrainerVanillaAdam(nnUNetTrainer):
         lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
         return optimizer, lr_scheduler
 
+class nnUNetTrainerVanillaRAdam(nnUNetTrainer):
+    def configure_optimizers(self):
+        optimizer = RAdam(self.network.parameters(),
+                          lr=self.initial_lr,
+                          weight_decay=self.weight_decay)
+        lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
+        return optimizer, lr_scheduler
+
+
+class nnUNetTrainerVanillaRAdam3en4(nnUNetTrainerVanillaRAdam):
+    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
+                 device: torch.device = torch.device('cuda')):
+        super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
+        self.initial_lr = 3e-4
+
 
 class nnUNetTrainerVanillaAdam1en3(nnUNetTrainerVanillaAdam):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
@@ -56,3 +71,4 @@ class nnUNetTrainerAdam3en4(nnUNetTrainerAdam):
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.initial_lr = 3e-4
+
