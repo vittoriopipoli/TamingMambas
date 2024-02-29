@@ -3,7 +3,7 @@ from nnunetv2.training.nnUNetTrainer.variants.optimizer.nnUNetTrainerAdam import
 from nnunetv2.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
 import torch
 from torch import nn
-from nnunetv2.nets.MultiSegMamba import get_multisegmamba_from_plans
+from nnunetv2.nets.SegMambaSkip import get_segmambaskip_from_plans
 
 
 class nnUNetTrainerSegMambaSkip(nnUNetTrainerVanillaRAdam3en4):
