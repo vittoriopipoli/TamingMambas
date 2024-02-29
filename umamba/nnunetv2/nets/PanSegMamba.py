@@ -387,15 +387,15 @@ class PanSegMamba(nn.Module):
         return self.encoder.compute_conv_feature_map_size(input_size) + self.decoder.compute_conv_feature_map_size(input_size)
 
 
-def get_pansegmamba_from_plans(plans_manager: plansmanager,
+def get_pansegmamba_from_plans(plans_manager: PlansManager,
                            dataset_json: dict,
-                           configuration_manager: configurationmanager,
+                           configuration_manager: ConfigurationManager,
                            num_input_channels: int,
-                           deep_supervision: bool = true):
+                           deep_supervision: bool = True):
     """
     we may have to change this in the future to accommodate other plans -> network mappings
 
-    num_input_channels can differ depending on whether we do cascade. its best to make this info available in the
+    num_input_channels can differ depending on whether we do cascade. Its best to make this info available in the
     trainer rather than inferring it again from the plans here.
     """
     num_stages = len(configuration_manager.conv_kernel_sizes)
@@ -408,12 +408,12 @@ def get_pansegmamba_from_plans(plans_manager: plansmanager,
     segmentation_network_class_name = 'PanSegMamba'
     network_class = PanSegMamba
     kwargs = {
-        'pansegmamba': {
-            'conv_bias': true,
+        'PanSegMamba': {
+            'conv_bias': True,
             'norm_op': get_matching_instancenorm(conv_op),
-            'norm_op_kwargs': {'eps': 1e-5, 'affine': true},
-            'dropout_op': none, 'dropout_op_kwargs': none,
-            'nonlin': nn.leakyrelu, 'nonlin_kwargs': {'inplace': true},
+            'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
+            'dropout_op': None, 'dropout_op_kwargs': None,
+            'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True},
         }
     }
 
@@ -425,7 +425,7 @@ def get_pansegmamba_from_plans(plans_manager: plansmanager,
     model = network_class(
         input_channels=num_input_channels,
         n_stages=num_stages,
-        features_per_stage=[min(configuration_manager.unet_base_num_features * 2 ** i,
+        features_per_stage=[min(configuration_manager.UNet_base_num_features * 2 ** i,
                                 configuration_manager.unet_max_num_features) for i in range(num_stages)],
         conv_op=conv_op,
         kernel_sizes=configuration_manager.conv_kernel_sizes,
@@ -435,7 +435,7 @@ def get_pansegmamba_from_plans(plans_manager: plansmanager,
         **conv_or_blocks_per_stage,
         **kwargs[segmentation_network_class_name]
     )
-    model.apply(initweights_he(1e-2))
+    model.apply(InitWeights_He(1e-2))
     if network_class == PanSegMamba:
         model.apply(init_last_bn_before_add_to_0)
 
