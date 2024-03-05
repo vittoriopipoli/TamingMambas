@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import torch
 from torch import nn
@@ -44,12 +45,12 @@ class MambaTrans(nn.Module):
 class MultiMambaTrans(nn.Module):
     def __init__(self, channels):
         super(MultiMambaTrans, self).__init__()
-        dims = torch.tensor([2,3,4])
+        dims = [2,3,4]
+        self.permutations = [torch.tensor(x) for x in list(itertools.permutations(dims, len(dims)))]
         self.mambas = nn.ModuleList([
             MambaTrans(channels,)
-            for _ in range(dims.shape[0])
+            for _ in range(len(self.permutations))
         ])
-        self.permutations = torch.combinations(dims, r=3)
 
     def forward(self, x):
         B, C, H, W, D = x.shape
