@@ -28,7 +28,7 @@ class MambaTrans(nn.Module):
         super(MambaTrans, self).__init__()
         self.mamba = Mamba(
             d_model=channels,
-            d_state=min(channels, 256),
+            d_state=min(channels, 64),
             d_conv=4,
             expand=2,
         )
@@ -41,14 +41,32 @@ class MambaTrans(nn.Module):
         x = self.head(self.norm2(x)) + x
         return x
 
+class PanMambaTrans(nn.Module):
+    def __init__(self, channels):
+        super(PanMambaTrans, self).__init__()
+        self.fwd_mamba = MambaTrans(channels,)
+        self.bwd_mamba = MambaTrans(channels,)
+        self.norm = nn.LayerNorm(channels,)
+
+    def forward(self, x):
+        fwd = self.fwd_mamba(x)
+        bwd = self.bwd_mamba(x.flip(dims=(1,))).flip(dims=(1,))
+        return self.norm(fwd + bwd)
+
 
 class MultiMambaTrans(nn.Module):
     def __init__(self, channels):
         super(MultiMambaTrans, self).__init__()
         dims = [2,3,4]
         self.permutations = [torch.tensor(x) for x in list(itertools.permutations(dims, len(dims)))]
+        self.permutations = [
+            self.permutations[0],
+            self.permutations[1],
+            self.permutations[2],
+            self.permutations[4],
+        ]
         self.mambas = nn.ModuleList([
-            MambaTrans(channels,)
+            PanMambaTrans(channels,)
             for _ in range(len(self.permutations))
         ])
 
@@ -58,7 +76,11 @@ class MultiMambaTrans(nn.Module):
         for permutation, mamba in zip(self.permutations,self.mambas):
             h = x.permute(0, 1, *permutation).reshape(B, C, H*W*D).permute(0, 2, 1)
             S1, S2, S3 = torch.tensor([H, W, D])[permutation-2]
-            out = mamba(h).permute(0, 2, 1).reshape(B, C, S1, S2, S3).permute(0, 1, *permutation)
+            inv_permutation = list(torch.argsort(permutation)+2)
+            out = mamba(h)
+            out = out.permute(0, 2, 1)
+            out = out.reshape(B, C, S1, S2, S3)
+            out = out.permute(0, 1, *inv_permutation)
             ys.append(out)
 
         y = torch.stack(ys, dim=1).mean(dim=1)
