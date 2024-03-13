@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import math
 from torch import nn
 from typing import Union, Type, List, Tuple
 
@@ -21,6 +22,24 @@ from dynamic_network_architectures.initialization.weight_init import init_last_b
 from nnunetv2.utilities.network_initialization import InitWeights_He
 from mamba_ssm import Mamba
 
+class PositionalEncoding(nn.Module):
+    """
+    from: https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+    """
+    def __init__(self, d_model, dropout=0.1, max_len=3_000_000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-torch.log(torch.tensor(10000.0) / d_model)))
+        pe = torch.zeros(max_len, d_model)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(1)]
+        return self.dropout(x)
+
 
 class MambaTrans(nn.Module):
     def __init__(self, channels):
@@ -34,35 +53,26 @@ class MambaTrans(nn.Module):
         self.norm1 = nn.LayerNorm(channels,)
         self.norm2 = nn.LayerNorm(channels,)
         self.head = nn.Linear(channels, channels)
+        self.pe = PositionalEncoding(channels)
 
     def forward(self, x):
+        x = self.pe(x)
         x = self.mamba(self.norm1(x)) + x
         x = self.head(self.norm2(x)) + x
         return x
 
 
-class MultiMambaTrans(nn.Module):
+class PanMambaTrans(nn.Module):
     def __init__(self, channels):
-        super(MultiMambaTrans, self).__init__()
-        dims = torch.tensor([2,3,4])
-        self.mambas = nn.ModuleList([
-            MambaTrans(channels,)
-            for _ in range(dims.shape[0])
-        ])
-        self.permutations = torch.combinations(dims, r=3)
+        super(PanMambaTrans, self).__init__()
+        self.fwd_mamba = MambaTrans(channels,)
+        self.bwd_mamba = MambaTrans(channels,)
+        self.norm = nn.LayerNorm(channels,)
 
     def forward(self, x):
-        B, C, H, W, D = x.shape
-        ys = []
-        for permutation, mamba in zip(self.permutations,self.mambas):
-            h = x.permute(0, 1, *permutation).reshape(B, C, H*W*D).permute(0, 2, 1)
-            S1, S2, S3 = torch.tensor([H, W, D])[permutation-2]
-            out = mamba(h).permute(0, 2, 1).reshape(B, C, S1, S2, S3).permute(0, 1, *permutation)
-            ys.append(out)
-
-        y = torch.stack(ys, dim=1).mean(dim=1)
-
-        return y
+        fwd = self.fwd_mamba(x)
+        bwd = self.bwd_mamba(x.flip(dims=(1,))).flip(dims=(1,))
+        return self.norm(fwd + bwd)
 
 
 class MambaLayer(nn.Module):
@@ -70,7 +80,7 @@ class MambaLayer(nn.Module):
         super().__init__()
         self.dim = dim
         self.norm = nn.LayerNorm(dim)
-        self.mamba = MultiMambaTrans(dim)
+        self.mamba = MambaTrans(dim)
     
     @autocast(enabled=False)
     def forward(self, x):
@@ -170,7 +180,7 @@ class ResidualMambaEncoder(nn.Module):
             stages.append(stage)
             input_channels = features_per_stage[s]
 
-            mamba_layers.append(MultiMambaTrans(input_channels))
+            mamba_layers.append(MambaLayer(input_channels))
 
         #self.stages = nn.Sequential(*stages)
         self.stages = nn.ModuleList(stages)
@@ -195,9 +205,7 @@ class ResidualMambaEncoder(nn.Module):
         if self.stem is not None:
             x = self.stem(x)
         ret = []
-        #for s in self.stages:
         for s in range(len(self.stages)):
-            #x = s(x)
             x = self.stages[s](x)
             x = self.mamba_layers[s](x)
             ret.append(x)
@@ -217,6 +225,7 @@ class ResidualMambaEncoder(nn.Module):
             input_size = [i // j for i, j in zip(input_size, self.strides[s])]
 
         return output
+
 
 class UNetResDecoder(nn.Module):
     def __init__(self,
@@ -345,7 +354,7 @@ class UNetResDecoder(nn.Module):
                 output += np.prod([self.num_classes, *skip_sizes[-(s+1)]], dtype=np.int64)
         return output
 
-class MultiSegMamba(nn.Module):
+class PosSegMamba(nn.Module):
     def __init__(self,
                  input_channels: int,
                  n_stages: int,
@@ -398,7 +407,7 @@ class MultiSegMamba(nn.Module):
         return self.encoder.compute_conv_feature_map_size(input_size) + self.decoder.compute_conv_feature_map_size(input_size)
 
 
-def get_multisegmamba_from_plans(plans_manager: PlansManager,
+def get_possegmamba_from_plans(plans_manager: PlansManager,
                            dataset_json: dict,
                            configuration_manager: ConfigurationManager,
                            num_input_channels: int,
@@ -416,10 +425,10 @@ def get_multisegmamba_from_plans(plans_manager: PlansManager,
 
     label_manager = plans_manager.get_label_manager(dataset_json)
 
-    segmentation_network_class_name = 'MultiSegMamba'
-    network_class = MultiSegMamba
+    segmentation_network_class_name = 'PosSegMamba'
+    network_class = PosSegMamba
     kwargs = {
-        'MultiSegMamba': {
+        'PosSegMamba': {
             'conv_bias': True,
             'norm_op': get_matching_instancenorm(conv_op),
             'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
@@ -447,7 +456,7 @@ def get_multisegmamba_from_plans(plans_manager: PlansManager,
         **kwargs[segmentation_network_class_name]
     )
     model.apply(InitWeights_He(1e-2))
-    if network_class == MultiSegMamba:
+    if network_class == PosSegMamba:
         model.apply(init_last_bn_before_add_to_0)
 
     return model

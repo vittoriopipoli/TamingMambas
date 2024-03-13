@@ -581,6 +581,7 @@ class nnUNetTrainer(object):
 
         # load the datasets for training and validation. Note that we always draw random samples so we really don't
         # care about distributing training cases across GPUs.
+        print(f'{self.preprocessed_dataset_folder=}')
         dataset_tr = nnUNetDataset(self.preprocessed_dataset_folder, tr_keys,
                                    folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
                                    num_images_properties_loading_threshold=0)
