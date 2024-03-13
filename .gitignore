@@ -1,7 +1,8 @@
+slurm_out
 *.nii.gz
 data/
 *.npy
-*.pth
+*.pth:;q
 *.pt
 
 # Byte-compiled / optimized / DLL files

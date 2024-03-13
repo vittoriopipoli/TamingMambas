@@ -37,7 +37,7 @@ def process_label(label):
     return ET,TC,WT
 
 def test(fold):
-    path='/unimore_home/llumetti/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset001_BrainTumour/'
+    path='/work/grana_maxillo/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset001_BrainTumour/'
     label_list=sorted(glob.glob(os.path.join(path,'labelsTs','*nii.gz')))
     infer_list=sorted(glob.glob(os.path.join(path,'inferTs_segmambaskip',fold,'*nii.gz')))
     print("loading success...")
