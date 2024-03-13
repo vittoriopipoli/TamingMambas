@@ -35,7 +35,7 @@ def process_label(label):
 def test(fold):
     path='/unimore_home/llumetti/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset090_SynapseAbdomen/'
     label_list=sorted(glob.glob(os.path.join(path,'labelsTs','*nii.gz')))
-    infer_list=sorted(glob.glob(os.path.join(path,'inferTs',fold,'*nii.gz')))
+    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_segmambaskip',fold,'*nii.gz')))
     print("loading success...")
     print(label_list)
     print(infer_list)
@@ -57,7 +57,7 @@ def test(fold):
     hd_aorta=[]
     hd_pancreas=[]
     
-    file=path + 'inferTs/'+fold
+    file=path + 'inferTs_segmambaskip/'+fold
     if not os.path.exists(file):
         os.makedirs(file)
     fw = open(file+'/dice_pre.txt', 'a')

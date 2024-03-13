@@ -464,8 +464,14 @@ class nnUNetPredictor(object):
                 # messing with state dict names...
                 if not isinstance(self.network, OptimizedModule):
                     self.network.load_state_dict(params)
+                    model_parameters = filter(lambda p: p.requires_grad, self.network.parameters())
+                    params = sum([np.prod(p.size()) for p in model_parameters])
+                    print(f"Network params: {params}")
                 else:
                     self.network._orig_mod.load_state_dict(params)
+                    model_parameters = filter(lambda p: p.requires_grad, self.network.parameters())
+                    params = sum([np.prod(p.size()) for p in model_parameters])
+                    print(f"Network params: {params}")
 
                 # why not leave prediction on device if perform_everything_on_device? Because this may cause the
                 # second iteration to crash due to OOM. Grabbing tha twith try except cause way more bloated code than
