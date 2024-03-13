@@ -23,4 +23,4 @@ class InitWeights_He(object):
             if name in ["out_proj.weight", "fc2.weight"]:
                 nn.init.kaiming_uniform_(p, a=math.sqrt(5))
                 with torch.no_grad():
-                    p /= math.sqrt(2 * 5)
+                    p /= math.sqrt(2 * 5*12)

@@ -39,7 +39,7 @@ def process_label(label):
 def test(fold):
     path='/work/grana_maxillo/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset001_BrainTumour/'
     label_list=sorted(glob.glob(os.path.join(path,'labelsTs','*nii.gz')))
-    infer_list=sorted(glob.glob(os.path.join(path,'inferTs',fold,'*nii.gz')))
+    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_segmambaskip',fold,'*nii.gz')))
     print("loading success...")
     Dice_et=[]
     Dice_tc=[]
@@ -48,7 +48,7 @@ def test(fold):
     HD_et=[]
     HD_tc=[]
     HD_wt=[]
-    file=path + 'inferTs/'+fold
+    file=path + 'inferTs_segmambaskip/'+fold
     fw = open(file+'/dice_pre.txt', 'w')
 
     for label_path,infer_path in zip(label_list,infer_list):
