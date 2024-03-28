@@ -20,14 +20,14 @@ class MambaLayer(nn.Module):
         self.output_dim = output_dim
         self.norm = nn.LayerNorm(input_dim)
         self.mamba = Mamba(
-                d_model=input_dim, # Model dimension d_model
-                d_state=d_state,  # SSM state expansion factor
-                d_conv=d_conv,    # Local convolution width
-                expand=expand,    # Block expansion factor
+            d_model=input_dim, # Model dimension d_model
+            d_state=d_state,  # SSM state expansion factor
+            d_conv=d_conv,    # Local convolution width
+            expand=expand,    # Block expansion factor
         )
         self.proj = nn.Linear(input_dim, output_dim)
         self.skip_scale= nn.Parameter(torch.ones(1))
-    
+
     def forward(self, x):
         if x.dtype == torch.float16:
             x = x.type(torch.float32)
@@ -46,7 +46,7 @@ class MambaLayer(nn.Module):
 
 def get_mamba_layer(
     spatial_dims: int, in_channels: int, out_channels: int, stride: int = 1
-):
+    ):
     mamba_layer = MambaLayer(input_dim=in_channels, output_dim=out_channels)
     if stride != 1:
         if spatial_dims==2:
@@ -65,7 +65,7 @@ class ResMambaBlock(nn.Module):
         norm: tuple | str,
         kernel_size: int = 3,
         act: tuple | str = ("RELU", {"inplace": True}),
-    ) -> None:
+        ) -> None:
         """
         Args:
             spatial_dims: number of spatial dimensions, could be 1, 2 or 3.
@@ -122,7 +122,7 @@ class EMUNet(nn.Module):
         blocks_down: tuple = (1, 2, 2, 4),
         blocks_up: tuple = (1, 1, 1),
         upsample_mode: UpsampleMode | str = UpsampleMode.NONTRAINABLE,
-    ):
+        ):
         super().__init__()
 
         if spatial_dims not in (2, 3):

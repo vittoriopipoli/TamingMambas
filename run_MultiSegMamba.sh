@@ -35,10 +35,12 @@ echo "#SBATCH --account=$slurm_account" >> $sbatch_file
 
 if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
   echo "#SBATCH --constraint gpu_A40_48G" >> $sbatch_file
+  echo "source /work/grana_maxillo/ECCV_MICCAI/U-Mamba/umamba/venv/bin/activate" >> $sbatch_file
+else
+  echo "source /unimore_home/llumetti/ECCV_MICCAI/BiUMamba/venv/bin/activate" >> $sbatch_file
 fi
 
-echo "source /work/grana_maxillo/ECCV_MICCAI/U-Mamba/umamba/venv/bin/activate" >> $sbatch_file
-echo "nnUNetv2_train 90 3d_fullres 0 -tr nnUNetTrainerMultiSegMamba" >> $sbatch_file
+echo "nnUNetv2_train 90 3d_fullres 0 -tr nnUNetTrainerMultiSegMamba --c" >> $sbatch_file
 
 sbatch $sbatch_file
 echo "Submitted sbatch file $sbatch_file"
