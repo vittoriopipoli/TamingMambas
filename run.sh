@@ -16,7 +16,7 @@ if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
   slurm_account="grana_maxillo"
   slurm_time="12:00:00"
   slurm_gres="gpu:1"
-  venv_path="source /unimore_home/llumetti/ECCV_MICCAI/BiUMamba/venv/bin/activate"
+  venv_path="source /work/grana_maxillo/ECCV_MICCAI/U-Mamba/umamba/venv/bin/activate"
 else
   echo "Detected Aries Cluster, please press Ctrl+C if I'm wrong. Running sbatch in 5 seconds"
   slurm_partition="ice4hpc"
@@ -26,10 +26,10 @@ else
   venv_path="source /unimore_home/llumetti/ECCV_MICCAI/BiUMamba/venv/bin/activate"
 fi
 
-echo "Running model $model on dataset $dataset"
+job_name=$model"_"$dataset"_nnUNet"
+echo "Running model $model on dataset $dataset - jobname: $job_name"
 sleep 1
 
-job_name=$model"_"$dataset"_nnUNet"
 
 random_string=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
 sbatch_file="/tmp/$job_name.sbatch"
@@ -49,7 +49,7 @@ if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
 fi
 
 echo $venv_path >> $sbatch_file
-echo "nnUNetv2_train $dataset 3d_fullres 0 -tr nnUNetTrainer"$model" --c" >> $sbatch_file
+echo "nnUNetv2_train $dataset 3d_fullres 0 -tr nnUNetTrainer"$model"" >> $sbatch_file
 
 sbatch $sbatch_file
 echo "Submitted sbatch file $sbatch_file"
