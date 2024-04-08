@@ -10,9 +10,9 @@ def read_nii(path):
 
 def dice(pred, label):
     if (pred.sum() + label.sum()) == 0:
-        return 1
+        return 100
     else:
-        return 2. * np.logical_and(pred, label).sum() / (pred.sum() + label.sum())
+        return 200. * np.logical_and(pred, label).sum() / (pred.sum() + label.sum())
 def hd(pred,gt):
         if pred.sum() > 0 and gt.sum()>0:
             hd95 = metric.binary.hd95(pred, gt)
@@ -33,9 +33,9 @@ def process_label(label):
     return spleen,right_kidney,left_kidney,gallbladder,liver,stomach,aorta,pancreas
 
 def test(fold):
-    path='/unimore_home/llumetti/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset090_SynapseAbdomen/'
+    path='/unimore_home/llumetti/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset490_SynapseAbdomen/'
     label_list=sorted(glob.glob(os.path.join(path,'labelsTs','*nii.gz')))
-    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_emunet',fold,'*nii.gz')))
+    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_PanSegMamba',fold,'*nii.gz')))
     print("loading success...")
     print(label_list)
     print(infer_list)
@@ -57,7 +57,7 @@ def test(fold):
     hd_aorta=[]
     hd_pancreas=[]
     
-    file=path + 'inferTs_emunet/'+fold
+    file=path + 'inferTs_PanSegMamba/'+fold
     if not os.path.exists(file):
         os.makedirs(file)
     fw = open(file+'/dice_pre.txt', 'a')
@@ -87,25 +87,25 @@ def test(fold):
         hd_aorta.append(hd(infer_aorta,label_aorta))
         hd_pancreas.append(hd(infer_pancreas,label_pancreas))
         
-        fw.write('*'*20+'\n',)
-        fw.write(infer_path.split('/')[-1]+'\n')
-        fw.write('Dice_spleen: {:.4f}\n'.format(Dice_spleen[-1]))
-        fw.write('Dice_right_kidney: {:.4f}\n'.format(Dice_right_kidney[-1]))
-        fw.write('Dice_left_kidney: {:.4f}\n'.format(Dice_left_kidney[-1]))
-        fw.write('Dice_gallbladder: {:.4f}\n'.format(Dice_gallbladder[-1]))
-        fw.write('Dice_liver: {:.4f}\n'.format(Dice_liver[-1]))
-        fw.write('Dice_stomach: {:.4f}\n'.format(Dice_stomach[-1]))
-        fw.write('Dice_aorta: {:.4f}\n'.format(Dice_aorta[-1]))
-        fw.write('Dice_pancreas: {:.4f}\n'.format(Dice_pancreas[-1]))
-        
-        fw.write('hd_spleen: {:.4f}\n'.format(hd_spleen[-1]))
-        fw.write('hd_right_kidney: {:.4f}\n'.format(hd_right_kidney[-1]))
-        fw.write('hd_left_kidney: {:.4f}\n'.format(hd_left_kidney[-1]))
-        fw.write('hd_gallbladder: {:.4f}\n'.format(hd_gallbladder[-1]))
-        fw.write('hd_liver: {:.4f}\n'.format(hd_liver[-1]))
-        fw.write('hd_stomach: {:.4f}\n'.format(hd_stomach[-1]))
-        fw.write('hd_aorta: {:.4f}\n'.format(hd_aorta[-1]))
-        fw.write('hd_pancreas: {:.4f}\n'.format(hd_pancreas[-1]))
+        # fw.write('*'*20+'\n',)
+        # fw.write(infer_path.split('/')[-1]+'\n')
+        # fw.write('Dice_spleen: {:.4f}\n'.format(Dice_spleen[-1]))
+        # fw.write('Dice_right_kidney: {:.4f}\n'.format(Dice_right_kidney[-1]))
+        # fw.write('Dice_left_kidney: {:.4f}\n'.format(Dice_left_kidney[-1]))
+        # fw.write('Dice_gallbladder: {:.4f}\n'.format(Dice_gallbladder[-1]))
+        # fw.write('Dice_liver: {:.4f}\n'.format(Dice_liver[-1]))
+        # fw.write('Dice_stomach: {:.4f}\n'.format(Dice_stomach[-1]))
+        # fw.write('Dice_aorta: {:.4f}\n'.format(Dice_aorta[-1]))
+        # fw.write('Dice_pancreas: {:.4f}\n'.format(Dice_pancreas[-1]))
+        # 
+        # fw.write('hd_spleen: {:.4f}\n'.format(hd_spleen[-1]))
+        # fw.write('hd_right_kidney: {:.4f}\n'.format(hd_right_kidney[-1]))
+        # fw.write('hd_left_kidney: {:.4f}\n'.format(hd_left_kidney[-1]))
+        # fw.write('hd_gallbladder: {:.4f}\n'.format(hd_gallbladder[-1]))
+        # fw.write('hd_liver: {:.4f}\n'.format(hd_liver[-1]))
+        # fw.write('hd_stomach: {:.4f}\n'.format(hd_stomach[-1]))
+        # fw.write('hd_aorta: {:.4f}\n'.format(hd_aorta[-1]))
+        # fw.write('hd_pancreas: {:.4f}\n'.format(hd_pancreas[-1]))
         
         dsc=[]
         HD=[]
@@ -117,7 +117,7 @@ def test(fold):
         dsc.append(np.mean(Dice_stomach[-1]))
         dsc.append(np.mean(Dice_aorta[-1]))
         dsc.append(np.mean(Dice_pancreas[-1]))
-        fw.write('DSC:'+str(np.mean(dsc))+'\n')
+        # fw.write('DSC:'+str(np.mean(dsc))+'\n')
         
         HD.append(hd_spleen[-1])
         HD.append(hd_right_kidney[-1])
@@ -127,29 +127,29 @@ def test(fold):
         HD.append(hd_stomach[-1])
         HD.append(hd_aorta[-1])
         HD.append(hd_pancreas[-1])
-        fw.write('hd:'+str(np.mean(HD))+'\n')
+        # fw.write('hd:'+str(np.mean(HD))+'\n')
         
     
     fw.write('*'*20+'\n')
     fw.write('Mean_Dice\n')
-    fw.write('Dice_spleen'+str(np.mean(Dice_spleen))+'\n')
-    fw.write('Dice_right_kidney'+str(np.mean(Dice_right_kidney))+'\n')
-    fw.write('Dice_left_kidney'+str(np.mean(Dice_left_kidney))+'\n')
-    fw.write('Dice_gallbladder'+str(np.mean(Dice_gallbladder))+'\n')
-    fw.write('Dice_liver'+str(np.mean(Dice_liver))+'\n')
-    fw.write('Dice_stomach'+str(np.mean(Dice_stomach))+'\n')
     fw.write('Dice_aorta'+str(np.mean(Dice_aorta))+'\n')
+    fw.write('Dice_gallbladder'+str(np.mean(Dice_gallbladder))+'\n')
+    fw.write('Dice_left_kidney'+str(np.mean(Dice_left_kidney))+'\n')
+    fw.write('Dice_right_kidney'+str(np.mean(Dice_right_kidney))+'\n')
+    fw.write('Dice_liver'+str(np.mean(Dice_liver))+'\n')
     fw.write('Dice_pancreas'+str(np.mean(Dice_pancreas))+'\n')
+    fw.write('Dice_spleen'+str(np.mean(Dice_spleen))+'\n')
+    fw.write('Dice_stomach'+str(np.mean(Dice_stomach))+'\n')
     
     fw.write('Mean_hd\n')
-    fw.write('hd_spleen'+str(np.mean(hd_spleen))+'\n')
-    fw.write('hd_right_kidney'+str(np.mean(hd_right_kidney))+'\n')
-    fw.write('hd_left_kidney'+str(np.mean(hd_left_kidney))+'\n')
-    fw.write('hd_gallbladder'+str(np.mean(hd_gallbladder))+'\n')
-    fw.write('hd_liver'+str(np.mean(hd_liver))+'\n')
-    fw.write('hd_stomach'+str(np.mean(hd_stomach))+'\n')
     fw.write('hd_aorta'+str(np.mean(hd_aorta))+'\n')
+    fw.write('hd_gallbladder'+str(np.mean(hd_gallbladder))+'\n')
+    fw.write('hd_left_kidney'+str(np.mean(hd_left_kidney))+'\n')
+    fw.write('hd_right_kidney'+str(np.mean(hd_right_kidney))+'\n')
+    fw.write('hd_liver'+str(np.mean(hd_liver))+'\n')
     fw.write('hd_pancreas'+str(np.mean(hd_pancreas))+'\n')
+    fw.write('hd_spleen'+str(np.mean(hd_spleen))+'\n')
+    fw.write('hd_stomach'+str(np.mean(hd_stomach))+'\n')
    
     fw.write('*'*20+'\n')
     
@@ -162,7 +162,7 @@ def test(fold):
     dsc.append(np.mean(Dice_stomach))
     dsc.append(np.mean(Dice_aorta))
     dsc.append(np.mean(Dice_pancreas))
-    fw.write('dsc:'+str(np.mean(dsc))+'\n')
+    fw.write('Average DICE:'+str(np.mean(dsc))+'\n')
     
     HD=[]
     HD.append(np.mean(hd_spleen))
@@ -173,7 +173,7 @@ def test(fold):
     HD.append(np.mean(hd_stomach))
     HD.append(np.mean(hd_aorta))
     HD.append(np.mean(hd_pancreas))
-    fw.write('hd:'+str(np.mean(HD))+'\n')
+    fw.write('Average HD:'+str(np.mean(HD))+'\n')
     
     print('done')
 

@@ -44,10 +44,12 @@ class nnUNetPredictor(object):
                  device: torch.device = torch.device('cuda'),
                  verbose: bool = False,
                  verbose_preprocessing: bool = False,
-                 allow_tqdm: bool = True):
+                 allow_tqdm: bool = True,
+                 add_coords_to_preprocessed_volume=True):
         self.verbose = verbose
         self.verbose_preprocessing = verbose_preprocessing
         self.allow_tqdm = allow_tqdm
+        self.add_coords_to_preprocessed_volume = add_coords_to_preprocessed_volume
 
         self.plans_manager, self.configuration_manager, self.list_of_parameters, self.network, self.dataset_json, \
         self.trainer_name, self.allowed_mirroring_axes, self.label_manager = None, None, None, None, None, None, None, None
@@ -409,6 +411,15 @@ class nnUNetPredictor(object):
         empty_cache(self.device)
         return ret
 
+
+    def add_coords(self, volume):
+        indices = np.indices(volume.shape[1:]).astype(np.float32)
+        indices = (indices / indices.max(axis=(1,2,3), keepdims=True))*2
+        indices = indices-1
+        volume = np.concatenate((volume, indices), axis=0)
+        return torch.from_numpy(volume)
+
+
     def predict_single_npy_array(self, input_image: np.ndarray, image_properties: dict,
                                  segmentation_previous_stage: np.ndarray = None,
                                  output_file_truncated: str = None,
@@ -589,6 +600,10 @@ class nnUNetPredictor(object):
         assert isinstance(input_image, torch.Tensor)
         self.network = self.network.to(self.device)
         self.network.eval()
+
+        if self.add_coords_to_preprocessed_volume:
+            input_image = self.add_coords(input_image)
+            print(f'adding coords, new shape: {input_image.shape}')
 
         empty_cache(self.device)
 
