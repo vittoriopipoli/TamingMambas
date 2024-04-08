@@ -1,5 +1,13 @@
 ailb_cluster=("aimagelab-srv-10" "ajeje" "carabbaggio" "ailb-login-01" "ailb-login-02" "aimagelab-srv-00")
 
+while getopts d:m: flag
+do
+    case "${flag}" in
+        d) dataset=${OPTARG};;
+        m) model=${OPTARG};;
+    esac
+done
+
 current_hostname=$(hostname)
 
 if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
@@ -8,17 +16,20 @@ if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
   slurm_account="grana_maxillo"
   slurm_time="12:00:00"
   slurm_gres="gpu:1"
+  venv_path="source /work/grana_maxillo/ECCV_MICCAI/U-Mamba/umamba/venv/bin/activate"
 else
   echo "Detected Aries Cluster, please press Ctrl+C if I'm wrong. Running sbatch in 5 seconds"
   slurm_partition="ice4hpc"
   slurm_account="cgr"
   slurm_time="48:00:00"
   slurm_gres="gpu:a100:1"
+  venv_path="source /unimore_home/llumetti/ECCV_MICCAI/BiUMamba/venv/bin/activate"
 fi
 
-sleep 5
+job_name=$model"_"$dataset"_nnUNet"
+echo "Running model $model on dataset $dataset - jobname: $job_name"
+sleep 1
 
-job_name="BrainTumor_SegMambaSkip_0"
 
 random_string=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
 sbatch_file="/tmp/$job_name.sbatch"
@@ -37,8 +48,8 @@ if [[ " ${ailb_cluster[@]} " =~ " ${current_hostname} " ]]; then
   echo "#SBATCH --constraint gpu_A40_48G" >> $sbatch_file
 fi
 
-echo "source /work/grana_maxillo/ECCV_MICCAI/U-Mamba/umamba/venv/bin/activate" >> $sbatch_file
-echo "nnUNetv2_train 1 3d_fullres 0 -tr nnUNetTrainerSegMambaSkip" >> $sbatch_file
+echo $venv_path >> $sbatch_file
+echo "nnUNetv2_train $dataset 3d_fullres 0 -tr nnUNetTrainer"$model"" >> $sbatch_file
 
 sbatch $sbatch_file
 echo "Submitted sbatch file $sbatch_file"
