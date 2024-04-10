@@ -58,9 +58,9 @@ def hd(pred,gt):
 
 
 def test(fold):
-    path='/unimore_home/llumetti/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset027_ACDC/'
+    path='/work/grana_maxillo/ECCV_MICCAI/U-Mamba/data/nnUNet_raw/Dataset027_ACDC/'
     label_list=sorted(glob.glob(os.path.join(path,'labelsTs','*nii.gz')))
-    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_segmambaskip',fold,'*nii.gz')))
+    infer_list=sorted(glob.glob(os.path.join(path,'inferTs_PanSegMamba',fold,'*nii.gz')))
     print("loading success...")
     print(label_list)
     print(infer_list)
@@ -72,7 +72,7 @@ def test(fold):
     hd_myo=[]
     hd_lv=[]
     
-    file=path + 'inferTs_segmambaskip/'+fold
+    file=path + 'inferTs_PanSegMamba/'+fold
     if not os.path.exists(file):
         os.makedirs(file)
     fw = open(file+'/dice_pre.txt', 'w')
